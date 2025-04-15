@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Система подтверждения ознакомления</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .form-container {
+      background: #f9f9f9;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 10px 15px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:disabled {
+      background: #cccccc;
+      cursor: not-allowed;
+    }
+    input {
+      padding: 8px;
+      margin: 5px 0;
+      width: 200px;
+    }
+    #confirmedList {
+      margin-top: 20px;
+      border-top: 1px solid #ddd;
+      padding-top: 20px;
+    }
+    .person {
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+    }
+    .timestamp {
+      color: #666;
+      font-size: 0.8em;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h2>Подтверждение ознакомления</h2>
+    <div>
+      <input type="text" id="name" placeholder="Имя" required>
+      <input type="text" id="surname" placeholder="Фамилия" required>
+    </div>
+    <button id="confirmBtn">Подтвердить ознакомление</button>
+  </div>
+
+  <div id="confirmedList">
+    <h3>Ознакомившиеся:</h3>
+    <div id="listContainer"></div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const btn = document.getElementById('confirmBtn');
+      const nameInput = document.getElementById('name');
+      const surnameInput = document.getElementById('surname');
+      const listContainer = document.getElementById('listContainer');
+      
+      // Загружаем список ознакомившихся при загрузке страницы
+      loadConfirmedList();
+
+      btn.addEventListener('click', function() {
+        const name = nameInput.value.trim();
+        const surname = surnameInput.value.trim();
+        
+        if (!name || !surname) {
+          alert('Пожалуйста, введите имя и фамилию');
+          return;
+        }
+        
+        const fullName = `${name} ${surname}`;
+        const now = new Date();
+        const timestamp = now.toLocaleString();
+        
+        // Получаем текущий список
+        let confirmedPeople = JSON.parse(localStorage.getItem('confirmedPeople')) || [];
+        
+        // Проверяем, не отмечался ли уже этот человек
+        const alreadyConfirmed = confirmedPeople.some(person => 
+          person.name === name && person.surname === surname
+        );
+        
+        if (alreadyConfirmed) {
+          alert('Вы уже подтверждали ознакомление');
+          return;
+        }
+        
+        // Добавляем нового человека
+        confirmedPeople.push({
+          name,
+          surname,
+          timestamp
+        });
+        
+        // Сохраняем в localStorage
+        localStorage.setItem('confirmedPeople', JSON.stringify(confirmedPeople));
+        
+        // Обновляем список
+        loadConfirmedList();
+        
+        // Блокируем форму
+        nameInput.value = '';
+        surnameInput.value = '';
+        nameInput.disabled = true;
+        surnameInput.disabled = true;
+        btn.disabled = true;
+        
+        alert(`Спасибо, ${fullName}! Ваше ознакомление подтверждено.`);
+      });
+      
+      function loadConfirmedList() {
+        const confirmedPeople = JSON.parse(localStorage.getItem('confirmedPeople')) || [];
+        listContainer.innerHTML = '';
+        
+        if (confirmedPeople.length === 0) {
+          listContainer.innerHTML = '<p>Пока никто не отметился</p>';
+          return;
+        }
+        
+        // Сортируем по дате (новые сверху)
+        confirmedPeople.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        
+        confirmedPeople.forEach(person => {
+          const personDiv = document.createElement('div');
+          personDiv.className = 'person';
+personDiv.innerHTML = `
+            <strong>${person.name} ${person.surname}</strong>
+            <span class="timestamp">${person.timestamp}</span>
+          `;
+          listContainer.appendChild(personDiv);
+        });
+      }
+    });
+  </script>
+</body>
+</html>
